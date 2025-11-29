@@ -1,0 +1,80 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+
+class UserController extends Controller
+{
+    // Tampilkan daftar user
+    public function index()
+    {
+        $users = User::all(); // Bisa ditambahkan filter jika perlu
+        return view('user.index', compact('users'));
+    }
+
+    // Tampilkan form edit user
+    public function edit($id)
+    {
+        $user = User::findOrFail($id);
+        return view('user.edit', compact('user'));
+    }
+
+    // Proses update user
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => "required|email|unique:users,email,$id",
+            'role' => 'required|string',
+        ]);
+
+        $user = User::findOrFail($id);
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+            'role' => $request->role,
+        ]);
+
+        return redirect()->route('user.index')->with('success', 'User berhasil diupdate');
+    }
+
+    // Hapus user
+    public function destroy($id)
+    {
+        $user = User::findOrFail($id);
+        $user->delete();
+
+        return redirect()->route('user.index')->with('success', 'User berhasil dihapus');
+    }
+
+    // Tampilkan form input user baru
+    public function create()
+    {
+        return view('user.create');
+    }
+
+    // Simpan data user baru
+    public function store(Request $request)
+    {
+        // Validasi input
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:6|confirmed',
+            'role' => 'required|string',
+        ]);
+
+        // Buat user baru
+        User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            'role' => $request->role,
+        ]);
+
+        return redirect()->route('user.index')->with('success', 'User baru berhasil ditambahkan!');
+    }
+}
